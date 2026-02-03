@@ -2,9 +2,9 @@ package main
 
 import (
 	"bytes"
-	"e-library/internal/handlers"
-	"e-library/internal/repository"
-	"e-library/internal/service"
+	"e-library-api/internal/handlers"
+	"e-library-api/internal/repository"
+	"e-library-api/internal/service"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"

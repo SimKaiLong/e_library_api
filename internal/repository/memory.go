@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"e-library/internal/models"
+	"e-library-api/internal/models"
 	"errors"
 	"sync"
 	"time"

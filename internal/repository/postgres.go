@@ -2,7 +2,7 @@ package repository
 
 import (
 	"database/sql"
-	"e-library/internal/models"
+	"e-library-api/internal/models"
 	"errors"
 	"strconv"
 	"time"

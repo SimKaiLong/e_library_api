@@ -1,4 +1,4 @@
-module e-library
+module e-library-api
 
 go 1.23.0
 

@@ -1,8 +1,8 @@
 package service
 
 import (
-	"e-library/internal/models"
-	"e-library/internal/repository"
+	"e-library-api/internal/models"
+	"e-library-api/internal/repository"
 )
 
 // LibraryService handles business logic such as 4 weeks duration for books borrowed and 3 weeks extension

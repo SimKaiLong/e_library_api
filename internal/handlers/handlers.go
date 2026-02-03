@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"e-library/internal/models"
-	"e-library/internal/service"
+	"e-library-api/internal/models"
+	"e-library-api/internal/service"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
