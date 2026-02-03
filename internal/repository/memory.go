@@ -1,8 +1,8 @@
 package repository
 
 import (
+	"e-library-api/internal/errors"
 	"e-library-api/internal/models"
-	"errors"
 	"sync"
 	"time"
 )
@@ -30,7 +30,7 @@ func (m *MemoryRepo) GetBook(title string) (*models.BookDetail, error) {
 	defer m.RUnlock()
 	book, ok := m.Books[title]
 	if !ok {
-		return nil, errors.New("book not found")
+		return nil, errors.ErrBookNotFound
 	}
 	return book, nil
 }
@@ -41,10 +41,10 @@ func (m *MemoryRepo) BorrowBook(name, title string, days int) (*models.LoanDetai
 
 	book, ok := m.Books[title]
 	if !ok {
-		return nil, errors.New("book not found")
+		return nil, errors.ErrBookNotFound
 	}
 	if book.AvailableCopies <= 0 {
-		return nil, errors.New("no copies available")
+		return nil, errors.ErrNoCopies
 	}
 
 	book.AvailableCopies--
@@ -64,7 +64,7 @@ func (m *MemoryRepo) ExtendLoan(name, title string, extrDays int) (*models.LoanD
 
 	loans, ok := m.Loans[title]
 	if !ok {
-		return nil, errors.New("no active loan found")
+		return nil, errors.ErrLoanNotFound
 	}
 
 	for i, l := range loans {
@@ -73,7 +73,7 @@ func (m *MemoryRepo) ExtendLoan(name, title string, extrDays int) (*models.LoanD
 			return &m.Loans[title][i], nil
 		}
 	}
-	return nil, errors.New("loan record not found for user")
+	return nil, errors.ErrLoanNotFound
 }
 
 func (m *MemoryRepo) ReturnBook(name, title string) error {
@@ -82,7 +82,7 @@ func (m *MemoryRepo) ReturnBook(name, title string) error {
 
 	loans, ok := m.Loans[title]
 	if !ok {
-		return errors.New("loan record not found")
+		return errors.ErrLoanNotFound
 	}
 
 	for i, l := range loans {
@@ -92,5 +92,5 @@ func (m *MemoryRepo) ReturnBook(name, title string) error {
 			return nil
 		}
 	}
-	return errors.New("loan record not found")
+	return errors.ErrLoanNotFound
 }
