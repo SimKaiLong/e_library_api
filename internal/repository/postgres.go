@@ -5,7 +5,6 @@ import (
 	"e-library-api/internal/errors"
 	"e-library-api/internal/models"
 	stdErrors "errors"
-	"strconv"
 	"time"
 )
 
@@ -29,7 +28,19 @@ func (p *PostgresRepo) GetBook(title string) (*models.BookDetail, error) {
 	return &b, nil
 }
 
-func (p *PostgresRepo) BorrowBook(name, title string, days int) (*models.LoanDetail, error) {
+func (p *PostgresRepo) GetLoan(name, title string) (*models.LoanDetail, error) {
+	var l models.LoanDetail
+	err := p.DB.QueryRow("SELECT borrower, title, loan_date, return_date FROM loans WHERE borrower = $1 AND title = $2", name, title).Scan(&l.NameOfBorrower, &l.BookTitle, &l.LoanDate, &l.ReturnDate)
+	if err != nil {
+		if stdErrors.Is(err, sql.ErrNoRows) {
+			return nil, errors.ErrLoanNotFound
+		}
+		return nil, err
+	}
+	return &l, nil
+}
+
+func (p *PostgresRepo) BorrowBook(loan *models.LoanDetail) (*models.LoanDetail, error) {
 	tx, err := p.DB.Begin()
 	if err != nil {
 		return nil, err
@@ -37,7 +48,7 @@ func (p *PostgresRepo) BorrowBook(name, title string, days int) (*models.LoanDet
 	defer tx.Rollback()
 
 	var currentCopies int
-	err = tx.QueryRow("SELECT available_copies FROM books WHERE title = $1 FOR UPDATE", title).Scan(&currentCopies)
+	err = tx.QueryRow("SELECT available_copies FROM books WHERE title = $1 FOR UPDATE", loan.BookTitle).Scan(&currentCopies)
 	if err != nil {
 		if stdErrors.Is(err, sql.ErrNoRows) {
 			return nil, errors.ErrBookNotFound
@@ -48,14 +59,7 @@ func (p *PostgresRepo) BorrowBook(name, title string, days int) (*models.LoanDet
 		return nil, errors.ErrNoCopies
 	}
 
-	_, _ = tx.Exec("UPDATE books SET available_copies = available_copies - 1 WHERE title = $1", title)
-
-	loan := models.LoanDetail{
-		NameOfBorrower: name,
-		BookTitle:      title,
-		LoanDate:       time.Now(),
-		ReturnDate:     time.Now().AddDate(0, 0, days),
-	}
+	_, _ = tx.Exec("UPDATE books SET available_copies = available_copies - 1 WHERE title = $1", loan.BookTitle)
 
 	_, err = tx.Exec("INSERT INTO loans (borrower, title, loan_date, return_date) VALUES ($1, $2, $3, $4)",
 		loan.NameOfBorrower, loan.BookTitle, loan.LoanDate, loan.ReturnDate)
@@ -64,13 +68,13 @@ func (p *PostgresRepo) BorrowBook(name, title string, days int) (*models.LoanDet
 		return nil, err
 	}
 
-	return &loan, tx.Commit()
+	return loan, tx.Commit()
 }
 
-func (p *PostgresRepo) ExtendLoan(name, title string, extrDays int) (*models.LoanDetail, error) {
+func (p *PostgresRepo) ExtendLoan(name, title string, newReturnDate time.Time) (*models.LoanDetail, error) {
 	var l models.LoanDetail
-	query := "UPDATE loans SET return_date = return_date + INTERVAL " + strconv.Itoa(extrDays) + "' days' WHERE borrower = $1 AND title = $2 RETURNING borrower, title, loan_date, return_date"
-	err := p.DB.QueryRow(query, name, title).Scan(&l.NameOfBorrower, &l.BookTitle, &l.LoanDate, &l.ReturnDate)
+	query := "UPDATE loans SET return_date = $1 WHERE borrower = $2 AND title = $3 RETURNING borrower, title, loan_date, return_date"
+	err := p.DB.QueryRow(query, newReturnDate, name, title).Scan(&l.NameOfBorrower, &l.BookTitle, &l.LoanDate, &l.ReturnDate)
 	if err != nil {
 		if stdErrors.Is(err, sql.ErrNoRows) {
 			return nil, errors.ErrLoanNotFound

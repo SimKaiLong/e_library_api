@@ -8,6 +8,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -21,13 +22,27 @@ func main() {
 	r.Use(gin.Recovery())
 
 	// Service Pattern
+	var repo repository.LibraryRepository
+	var svc service.LibraryServiceInterface
+
 	// DEFAULT: MemoryRepo for instant testing
-	repo := repository.NewMemoryRepo()
-	svc := service.NewLibraryService(repo)
+	repo = repository.NewMemoryRepo()
+	svc = service.NewLibraryService(repo)
 
 	// UNCOMMENT FOR POSTGRES:
-	// db, _ := sql.Open("postgres", "host=localhost user=user password=pass dbname=lib sslmode=disable")
-	// repo := repository.NewPostgresRepo(db)
+	//db, err := sql.Open("postgres", "host=localhost user=user password=pass dbname=lib sslmode=disable")
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//defer db.Close()
+	//
+	//// Best Practice: Connection Pool Settings
+	//db.SetMaxOpenConns(25)
+	//db.SetMaxIdleConns(25)
+	//db.SetConnMaxLifetime(5 * time.Minute)
+	//
+	//repo = repository.NewPostgresRepo(db)
+	//svc = service.NewLibraryService(repo)
 
 	h := &handlers.LibraryHandler{Service: svc}
 
@@ -38,8 +53,7 @@ func main() {
 	r.POST("/Return", h.ReturnBook)
 
 	log.Println("Server listening on :3000")
-	err := r.Run(":3000")
-	if err != nil {
+	if err := r.Run(":3000"); err != nil {
 		log.Println("Server encountered an error.", err)
 	}
 }

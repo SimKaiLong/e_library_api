@@ -3,12 +3,14 @@ package main
 import (
 	"bytes"
 	"e-library-api/internal/handlers"
+	"e-library-api/internal/models"
 	"e-library-api/internal/repository"
 	"e-library-api/internal/service"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -131,7 +133,12 @@ func TestExtendLoan_Scenarios(t *testing.T) {
 
 	t.Run("Success - Extend Existing Loan", func(t *testing.T) {
 		// Manually inject a loan to test extension
-		repo.BorrowBook("Alice", "Clean Code", 28)
+		repo.BorrowBook(&models.LoanDetail{
+			NameOfBorrower: "Alice",
+			BookTitle:      "Clean Code",
+			LoanDate:       time.Now(),
+			ReturnDate:     time.Now().AddDate(0, 0, 28),
+		})
 		initialReturnDate := repo.Loans["Clean Code"][0].ReturnDate
 
 		w := httptest.NewRecorder()
@@ -159,7 +166,12 @@ func TestReturnBook_Scenarios(t *testing.T) {
 	router, repo := setupTestRouter()
 
 	t.Run("Success - Return Book", func(t *testing.T) {
-		repo.BorrowBook("Alice", "Clean Code", 28)
+		repo.BorrowBook(&models.LoanDetail{
+			NameOfBorrower: "Alice",
+			BookTitle:      "Clean Code",
+			LoanDate:       time.Now(),
+			ReturnDate:     time.Now().AddDate(0, 0, 28),
+		})
 		beforeReturn, _ := repo.GetBook("Clean Code")
 		initialCopies := beforeReturn.AvailableCopies // is 1
 

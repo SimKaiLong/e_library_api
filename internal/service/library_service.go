@@ -3,6 +3,7 @@ package service
 import (
 	"e-library-api/internal/models"
 	"e-library-api/internal/repository"
+	"time"
 )
 
 // LibraryServiceInterface defines the behaviors for the library service.
@@ -27,11 +28,23 @@ func (s *LibraryService) GetBook(title string) (*models.BookDetail, error) {
 }
 
 func (s *LibraryService) BorrowBook(name, title string) (*models.LoanDetail, error) {
-	return s.Repo.BorrowBook(name, title, 28)
+	loan := &models.LoanDetail{
+		NameOfBorrower: name,
+		BookTitle:      title,
+		LoanDate:       time.Now(),
+		ReturnDate:     time.Now().AddDate(0, 0, 28), // 4-week rule
+	}
+	return s.Repo.BorrowBook(loan)
 }
 
 func (s *LibraryService) ExtendLoan(name, title string) (*models.LoanDetail, error) {
-	return s.Repo.ExtendLoan(name, title, 21) // 3 weeks extension rule
+	loan, err := s.Repo.GetLoan(name, title)
+	if err != nil {
+		return nil, err
+	}
+
+	newReturnDate := loan.ReturnDate.AddDate(0, 0, 21) // 3-week extension rule
+	return s.Repo.ExtendLoan(name, title, newReturnDate)
 }
 
 func (s *LibraryService) ReturnBook(name, title string) error {

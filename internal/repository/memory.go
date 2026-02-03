@@ -35,11 +35,28 @@ func (m *MemoryRepo) GetBook(title string) (*models.BookDetail, error) {
 	return book, nil
 }
 
-func (m *MemoryRepo) BorrowBook(name, title string, days int) (*models.LoanDetail, error) {
+func (m *MemoryRepo) GetLoan(name, title string) (*models.LoanDetail, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	loans, ok := m.Loans[title]
+	if !ok {
+		return nil, errors.ErrLoanNotFound
+	}
+
+	for _, l := range loans {
+		if l.NameOfBorrower == name {
+			return &l, nil
+		}
+	}
+	return nil, errors.ErrLoanNotFound
+}
+
+func (m *MemoryRepo) BorrowBook(loan *models.LoanDetail) (*models.LoanDetail, error) {
 	m.Lock()
 	defer m.Unlock()
 
-	book, ok := m.Books[title]
+	book, ok := m.Books[loan.BookTitle]
 	if !ok {
 		return nil, errors.ErrBookNotFound
 	}
@@ -48,17 +65,11 @@ func (m *MemoryRepo) BorrowBook(name, title string, days int) (*models.LoanDetai
 	}
 
 	book.AvailableCopies--
-	loan := models.LoanDetail{
-		NameOfBorrower: name,
-		BookTitle:      title,
-		LoanDate:       time.Now(),
-		ReturnDate:     time.Now().AddDate(0, 0, days), // 4 weeks
-	}
-	m.Loans[title] = append(m.Loans[title], loan)
-	return &loan, nil
+	m.Loans[loan.BookTitle] = append(m.Loans[loan.BookTitle], *loan)
+	return loan, nil
 }
 
-func (m *MemoryRepo) ExtendLoan(name, title string, extrDays int) (*models.LoanDetail, error) {
+func (m *MemoryRepo) ExtendLoan(name, title string, newReturnDate time.Time) (*models.LoanDetail, error) {
 	m.Lock()
 	defer m.Unlock()
 
@@ -69,7 +80,7 @@ func (m *MemoryRepo) ExtendLoan(name, title string, extrDays int) (*models.LoanD
 
 	for i, l := range loans {
 		if l.NameOfBorrower == name {
-			m.Loans[title][i].ReturnDate = l.ReturnDate.AddDate(0, 0, extrDays)
+			m.Loans[title][i].ReturnDate = newReturnDate
 			return &m.Loans[title][i], nil
 		}
 	}
