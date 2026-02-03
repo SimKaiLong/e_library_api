@@ -11,4 +11,5 @@ type LibraryRepository interface {
 	BorrowBook(loan *models.LoanDetail) (*models.LoanDetail, error)
 	ExtendLoan(name, title string, newReturnDate time.Time) (*models.LoanDetail, error)
 	ReturnBook(name, title string) error
+	Ping() error
 }

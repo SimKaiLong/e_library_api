@@ -12,6 +12,7 @@ type LibraryServiceInterface interface {
 	BorrowBook(name, title string) (*models.LoanDetail, error)
 	ExtendLoan(name, title string) (*models.LoanDetail, error)
 	ReturnBook(name, title string) error
+	HealthCheck() error
 }
 
 // LibraryService handles business logic such as 4-week duration for books borrowed and 3-week extension
@@ -49,4 +50,8 @@ func (s *LibraryService) ExtendLoan(name, title string) (*models.LoanDetail, err
 
 func (s *LibraryService) ReturnBook(name, title string) error {
 	return s.Repo.ReturnBook(name, title)
+}
+
+func (s *LibraryService) HealthCheck() error {
+	return s.Repo.Ping()
 }

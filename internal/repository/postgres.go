@@ -59,7 +59,9 @@ func (p *PostgresRepo) BorrowBook(loan *models.LoanDetail) (*models.LoanDetail, 
 		return nil, errors.ErrNoCopies
 	}
 
-	_, _ = tx.Exec("UPDATE books SET available_copies = available_copies - 1 WHERE title = $1", loan.BookTitle)
+	if _, err = tx.Exec("UPDATE books SET available_copies = available_copies - 1 WHERE title = $1", loan.BookTitle); err != nil {
+		return nil, err
+	}
 
 	_, err = tx.Exec("INSERT INTO loans (borrower, title, loan_date, return_date) VALUES ($1, $2, $3, $4)",
 		loan.NameOfBorrower, loan.BookTitle, loan.LoanDate, loan.ReturnDate)
@@ -95,7 +97,10 @@ func (p *PostgresRepo) ReturnBook(name, title string) error {
 	if err != nil {
 		return err
 	}
-	count, _ := res.RowsAffected()
+	count, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
 	if count == 0 {
 		return errors.ErrLoanNotFound
 	}
@@ -105,4 +110,8 @@ func (p *PostgresRepo) ReturnBook(name, title string) error {
 		return err
 	}
 	return tx.Commit()
+}
+
+func (p *PostgresRepo) Ping() error {
+	return p.DB.Ping()
 }

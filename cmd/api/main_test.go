@@ -27,6 +27,7 @@ func setupTestRouter() (*gin.Engine, *repository.MemoryRepo) {
 	r.POST("/Borrow", h.BorrowBook)
 	r.POST("/Extend", h.ExtendLoan)
 	r.POST("/Return", h.ReturnBook)
+	r.GET("/health", h.HealthCheck)
 
 	return r, repo
 }
@@ -63,6 +64,14 @@ func TestEndpoints(t *testing.T) {
 		req, _ := http.NewRequest("POST", "/Borrow", bytes.NewBuffer(payload))
 		router.ServeHTTP(w, req)
 		assert.Equal(t, http.StatusConflict, w.Code)
+	})
+
+	t.Run("GET /health - Success", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/health", nil)
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), `"status":"UP"`)
 	})
 }
 

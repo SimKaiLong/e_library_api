@@ -1,25 +1,133 @@
-# e-Library REST API
+# e-Library API
 
-A simple e-book loan management system built with Go.
+This is a system for managing e-book loans. It is built to be reliable, easy to change, and easy to monitor.
 
-## Features
-- **Book Discovery**: Real-time availability checks.
-- **Loan Management**: Borrow, Extend, and Return logic.
-- **Observability**: Structured JSON logging to `stdout`.
-- **Modular Design**: Interface-driven repository (Memory/Postgres).
+## Overview
+
+This project provides a way to manage a library's books and loans through a web interface (API). It is organized in a way that makes it easy to grow and maintain.
+
+### Features
+
+- **Organized Structure**: The code is separated into logical parts.
+- **Flexible Storage**: It can easily switch between different types of data storage.
+- **Two Storage Options**: It can store data in temporary memory or a permanent database.
+- **Easy Settings**: Settings can be adjusted without changing the code.
+- **Safe Stopping**: The system finishes its work before shutting down.
+- **Activity Records**: Every action is recorded in a clear format.
+- **Testing**: Includes checks to ensure everything works as expected.
+- **System Monitoring**: Includes a way to check if the system and its storage are working correctly.
 
 ## Tech Stack
-- **Framework**: Gin Gonic
-- **Logging**: zerolog
-- **Persistence**: Postgres Support
 
-## Quick Start
-1. `go mod tidy`
-2. `go run main.go`
-3. `go test ./...`
+- **Language**: Go (1.23+)
+- **Web Framework**: [Gin Gonic](https://github.com/gin-gonic/gin)
+- **Logging**: [zerolog](https://github.com/rs/zerolog)
+- **Settings**: [env](https://github.com/caarlos0/env) & [godotenv](https://github.com/joho/godotenv)
+- **Database**: PostgreSQL (Driver: `lib/pq`)
+- **Testing**: [testify](https://github.com/stretchr/testify)
 
-## 📖 API Documentation
-- **GET /Book?title=...** : Detail & Availability
-- **POST /Borrow** : {name, title} -> 28-day loan
-- **POST /Extend** : {name, title} -> +21 extraDays
-- **POST /Return** : {name, title} -> Success
+## Project Structure
+
+```text
+├── cmd/api/            # Application startup logic
+├── internal/
+│   ├── config/         # Settings loader
+│   ├── errors/         # Error definitions
+│   ├── handlers/       # Web interface logic
+│   ├── middleware/     # Activity tracking and recovery
+│   ├── models/         # Data definitions
+│   ├── repository/     # Data storage logic
+│   └── service/        # Business rules
+├── .env.example        # Settings template
+└── README.md
+```
+
+## Setup & Installation
+
+### Prerequisites
+
+- Go 1.23 or higher
+- PostgreSQL (optional, uses memory by default)
+
+### Local Development
+
+1. **Get the code**
+   ```bash
+   git clone <repository-url>
+   cd e-library-api
+   ```
+
+2. **Prepare settings**
+   Copy the example settings file:
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Install tools**
+   ```bash
+   go mod tidy
+   ```
+
+4. **Run the system**
+   ```bash
+   go run cmd/api/main.go
+   ```
+   *The system will start on port 3000.*
+
+5. **Run checks**
+   ```bash
+   go test -v ./...
+   ```
+
+## Configuration
+
+The system uses environment settings. These can be placed in a `.env` file for local use.
+
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `PORT` | The port the system uses | `3000` |
+| `DB_TYPE` | Where to store data (`memory` or `postgres`) | `memory` |
+| `DATABASE_URL` | Database connection details | `host=localhost user=user password=pass dbname=lib sslmode=disable` |
+| `APP_ENV` | Mode (`development` or `production`) | `development` |
+
+## How to use the API
+
+### Look for a book
+- **GET** `/Book?title={title}`
+  - Shows if a book is available.
+  - **Example**: `200 OK` with `{"title": "...", "available_copies": 5}`
+
+### Borrow a book
+- **POST** `/Borrow`
+  - Starts a 28-day loan.
+  - **Body**: `{"name_of_borrower": "Alice", "book_title": "Clean Code"}`
+
+### Extend a loan
+- **POST** `/Extend`
+  - Adds 21 days to a loan.
+  - **Body**: `{"name_of_borrower": "Alice", "book_title": "Clean Code"}`
+
+### Return a book
+- **POST** `/Return`
+  - Ends a loan and puts the book back.
+  - **Body**: `{"name_of_borrower": "Alice", "book_title": "Clean Code"}`
+
+### Check system status
+- **GET** `/health`
+  - Shows if the system and its storage are working correctly.
+  - **Example**: `200 OK` with `{"status": "UP"}`
+
+## Design Principles
+
+- **Separation of Logic**: Business rules are kept separate from how data is stored.
+- **Reliable Updates**: Database changes happen safely to prevent errors.
+- **Safety**: Handles multiple requests at the same time without issues.
+- **Safe Exit**: Stops gracefully to avoid losing work.
+- **Visibility**: Records every transaction to help with troubleshooting.
+
+## Future Plans
+
+- **Better Timing**: Improve how the system handles long-running tasks.
+- **Automatic Database Setup**: Automate how the database is prepared.
+- **Automatic Documentation**: Generate technical guides automatically.
+- **Security**: Add login requirements.

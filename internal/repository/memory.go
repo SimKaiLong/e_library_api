@@ -105,3 +105,7 @@ func (m *MemoryRepo) ReturnBook(name, title string) error {
 	}
 	return errors.ErrLoanNotFound
 }
+
+func (m *MemoryRepo) Ping() error {
+	return nil
+}
